@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>중국어 단어장 & 강제 시험</title>
+  <title>중국어 플래시카드 & 3단계 시험</title>
   <link rel="manifest" href="data:application/json;charset=utf-8,%7B%22name%22%3A%22%EC%A5%91%EA%B5%AD%EC%96%B4%20%ED%94%8C%EB%9E%98%EC%8B%9C%EC%B9%B4%EB%93%9C%22%2C%22short_name%22%3A%22%EC%A5%91%EA%B5%AD%EC%96%B4%EC%95%B1%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f8fafc%22%2C%22theme_color%22%3A%22%234f46e5%22%7D">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -41,40 +41,46 @@
     </div>
   </div>
 
-  <!-- Mandatory Quiz Modal (Modal View) -->
+  <!-- Mandatory Quiz Modal (30 Questions / 3 Sections) -->
   <div id="quizModal" class="hidden fixed inset-0 bg-slate-900/90 z-40 flex items-center justify-center p-4 backdrop-blur-sm">
     <div class="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-5">
       <div class="flex justify-between items-center border-b pb-3">
         <div>
-          <span class="bg-red-100 text-red-600 text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">강제 단어 시험</span>
-          <h2 class="text-xl font-bold mt-1">오늘의 주관식 단어 테스트</h2>
+          <span id="quizSectionBadge" class="bg-indigo-100 text-indigo-700 text-xs font-bold px-2.5 py-1 rounded-full tracking-wider">1단계: 한자 ➔ 뜻</span>
+          <h2 class="text-xl font-bold mt-1">오늘의 일일 단어 테스트</h2>
         </div>
-        <span id="quizProgress" class="text-sm font-semibold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">1 / 5</span>
+        <span id="quizProgress" class="text-sm font-semibold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">1 / 30</span>
       </div>
 
       <div id="quizContent" class="space-y-4">
-        <!-- Quiz Item -->
-        <div class="text-center py-6 bg-slate-50 rounded-xl border border-slate-100">
-          <div id="quizHanzi" class="text-4xl font-bold text-slate-800 mb-2">你好</div>
-          <div id="quizPinyin" class="text-lg text-indigo-600 font-medium">nǐ hǎo</div>
+        <!-- Question Presentation -->
+        <div class="text-center py-6 bg-slate-50 rounded-xl border border-slate-100 space-y-2">
+          <div id="quizPromptLabel" class="text-xs text-slate-400 font-bold uppercase tracking-wider">문제</div>
+          <div id="quizMainText" class="text-4xl font-bold text-slate-800">你好</div>
+          <div id="quizSubText" class="text-lg text-indigo-600 font-medium">nǐ hǎo</div>
         </div>
 
-        <div>
-          <label class="block text-xs font-semibold text-slate-500 mb-1">뜻을 직접 입력하세요:</label>
-          <input type="text" id="quizAnswerInput" placeholder="예: 안녕, 안녕하세요" class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-center font-medium text-lg">
+        <!-- Answer Input (Subjective Types: Section 1 & 3) -->
+        <div id="subjectiveArea" class="space-y-2">
+          <label id="subjectiveLabel" class="block text-xs font-semibold text-slate-500">정답 입력:</label>
+          <input type="text" id="quizAnswerInput" placeholder="정답을 입력하세요" class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-center font-medium text-lg">
+          <button id="quizSubmitBtn" onclick="submitSubjectiveAnswer()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg transition">정답 제출</button>
+        </div>
+
+        <!-- Multiple Choice Options (Section 2) -->
+        <div id="objectiveArea" class="hidden grid grid-cols-1 gap-2.5">
+          <!-- Dynamically inserted 4 choices -->
         </div>
 
         <div id="quizFeedback" class="hidden text-center text-sm font-bold p-2 rounded-lg"></div>
-
-        <button id="quizSubmitBtn" onclick="submitQuizAnswer()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg transition">정답 제출</button>
       </div>
 
       <!-- Result View -->
       <div id="quizResult" class="hidden text-center space-y-4 py-4">
         <div class="text-5xl">🎉</div>
         <h3 class="text-2xl font-bold text-slate-800">시험 완료!</h3>
-        <p class="text-slate-600 font-medium"><span id="quizScore" class="text-indigo-600 font-bold text-2xl">0</span> / <span id="quizTotal">0</span> 문제 맞춤</p>
-        <div id="wrongList" class="text-left text-xs bg-slate-50 p-3 rounded-lg max-h-36 overflow-y-auto space-y-1 border border-slate-200"></div>
+        <p class="text-slate-600 font-medium"><span id="quizScore" class="text-indigo-600 font-bold text-2xl">0</span> / <span id="quizTotal">30</span> 문제 맞춤</p>
+        <div id="wrongList" class="text-left text-xs bg-slate-50 p-3 rounded-lg max-h-40 overflow-y-auto space-y-1.5 border border-slate-200"></div>
         <button onclick="closeQuizModal()" class="w-full py-3 bg-slate-800 text-white font-bold rounded-xl shadow-md hover:bg-slate-900 transition">학습으로 돌아가기</button>
       </div>
     </div>
@@ -100,7 +106,10 @@
         <div class="text-xs text-slate-500 font-medium">⏰ 일일 강제 시험 시간</div>
         <div class="text-sm font-bold text-slate-700">매일 지정된 시간에 시험 시작</div>
       </div>
-      <input type="time" id="examTime" value="20:00" onchange="saveExamTime()" class="border border-slate-200 rounded-lg px-2 py-1 text-sm font-bold text-indigo-600 focus:outline-none">
+      <div class="flex items-center gap-2">
+        <input type="time" id="examTime" value="20:00" onchange="saveExamTime()" class="border border-slate-200 rounded-lg px-2 py-1 text-sm font-bold text-indigo-600 focus:outline-none">
+        <button onclick="startMandatoryQuiz()" class="text-xs bg-indigo-50 text-indigo-600 font-bold px-2.5 py-1.5 rounded-lg hover:bg-indigo-100">지금 시험</button>
+      </div>
     </section>
 
     <!-- Flashcard Viewer -->
@@ -158,7 +167,7 @@
           <label class="block text-xs font-semibold text-slate-500 mb-1">한자 (Word)</label>
           <div class="flex gap-2">
             <input type="text" id="inputHanzi" placeholder="예: 苹果" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            <button onclick="autoFill()" class="whitespace-nowrap px-3 py-2 bg-amber-500 hover:bg-amber-600 text-white font-medium text-xs rounded-lg shadow-sm transition flex items-center gap-1">
+            <button id="autoFillBtn" onclick="autoFill()" class="whitespace-nowrap px-3 py-2 bg-amber-500 hover:bg-amber-600 text-white font-medium text-xs rounded-lg shadow-sm transition flex items-center gap-1">
               <i class="fa-solid fa-bolt"></i> 자동 조회
             </button>
           </div>
@@ -201,10 +210,11 @@
   </main>
 
   <script>
-    // State
     let words = JSON.parse(localStorage.getItem('zh_words')) || [
       { id: 1, hanzi: '你好', pinyin: 'nǐ hǎo', meaning: '안녕하세요', exZh: '你好，很高兴认识你。', exKr: '안녕하세요, 만나서 반갑습니다.' },
-      { id: 2, hanzi: '谢谢', pinyin: 'xièxie', meaning: '감사합니다', exZh: '非常谢谢你的帮助。', exKr: '도와주셔서 정말 감사합니다.' }
+      { id: 2, hanzi: '谢谢', pinyin: 'xièxie', meaning: '감사합니다', exZh: '非常谢谢你的帮助。', exKr: '도와주셔서 정말 감사합니다.' },
+      { id: 3, hanzi: '苹果', pinyin: 'píngguǒ', meaning: '사과', exZh: '我喜欢吃苹果。', exKr: '나는 사과를 좋아합니다.' },
+      { id: 4, hanzi: '学习', pinyin: 'xuéxí', meaning: '공부하다', exZh: '努力学习汉语。', exKr: '열심히 중국어를 공부합니다.' }
     ];
     let currentIndex = 0;
     let quizQueue = [];
@@ -212,13 +222,12 @@
     let quizScore = 0;
     let wrongAnswers = [];
 
-    // Init
     window.onload = () => {
       saveWords();
       renderCard();
       renderList();
       checkScheduledExam();
-      setInterval(checkScheduledExam, 30000); // Check every 30s
+      setInterval(checkScheduledExam, 30000);
     };
 
     function saveWords() {
@@ -226,7 +235,6 @@
       document.getElementById('wordCount').innerText = words.length;
     }
 
-    // TTS
     function speakText(text) {
       if ('speechSynthesis' in window) {
         const msg = new SpeechSynthesisUtterance(text);
@@ -235,24 +243,35 @@
       }
     }
 
-    // Auto Fill Function
     async function autoFill() {
       const hanzi = document.getElementById('inputHanzi').value.trim();
-      if (!hanzi) return alert('한자를 입력해주세요.');
-      
+      if (!hanzi) return alert('한자를 먼저 입력해 주세요.');
+
+      const btn = document.getElementById('autoFillBtn');
+      btn.innerText = '조회 중...';
+      btn.disabled = true;
+
       try {
-        const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(hanzi)}`).catch(() => null);
-        // Fallback demo lookup for testing
-        document.getElementById('inputPinyin').value = 'pīnyīn';
-        document.getElementById('inputMeaning').value = '조회 결과';
-        document.getElementById('inputExZh').value = `${hanzi}의 예문입니다.`;
-        document.getElementById('inputExKr').value = '자동 생성된 예문입니다.';
-      } catch (e) {
-        alert('조회 중 오류가 발생했습니다.');
+        const pinyinRes = await fetch(`https://api.pinyin.icu/pinyin?text=${encodeURIComponent(hanzi)}`).then(r => r.json()).catch(() => null);
+        if (pinyinRes && pinyinRes.pinyin) {
+          document.getElementById('inputPinyin').value = pinyinRes.pinyin;
+        }
+
+        const transRes = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(hanzi)}&langpair=zh|ko`).then(r => r.json()).catch(() => null);
+        if (transRes && transRes.responseData && transRes.responseData.translatedText) {
+          document.getElementById('inputMeaning').value = transRes.responseData.translatedText.replace(/[\.\?]/g, '');
+        }
+
+        document.getElementById('inputExZh').value = `这是${hanzi}。`;
+        document.getElementById('inputExKr').value = `이것은 ${document.getElementById('inputMeaning').value || hanzi}입니다.`;
+      } catch (err) {
+        alert('조회 중 오류가 발생했습니다. 직접 입력해 주세요.');
+      } finally {
+        btn.innerHTML = '<i class="fa-solid fa-bolt"></i> 자동 조회';
+        btn.disabled = false;
       }
     }
 
-    // Card View Rendering
     function renderCard() {
       if (words.length === 0) {
         document.getElementById('cardHanzi').innerText = '단어 없음';
@@ -272,13 +291,8 @@
       document.getElementById('card').classList.remove('flipped');
     }
 
-    function flipCard() {
-      document.getElementById('card').classList.toggle('flipped');
-    }
-
-    function toggleExampleFront() {
-      document.getElementById('cardExampleFront').classList.toggle('hidden');
-    }
+    function flipCard() { document.getElementById('card').classList.toggle('flipped'); }
+    function toggleExampleFront() { document.getElementById('cardExampleFront').classList.toggle('hidden'); }
 
     function prevCard() {
       if (words.length === 0) return;
@@ -292,7 +306,6 @@
       renderCard();
     }
 
-    // Add & List
     function addWord() {
       const hanzi = document.getElementById('inputHanzi').value.trim();
       const pinyin = document.getElementById('inputPinyin').value.trim();
@@ -345,11 +358,167 @@
       `).join('');
     }
 
-    // Mandatory Timed Quiz System
-    function saveExamTime() {
-      const time = document.getElementById('examTime').value;
-      localStorage.setItem('zh_exam_time', time);
+    // 30-Question Exam Setup (10 Sec1 + 10 Sec2 + 10 Sec3)
+    function startMandatoryQuiz() {
+      if (words.length === 0) return alert('시험을 보려면 단어를 먼저 등록해 주세요.');
+
+      const pickRandom = (count) => {
+        let res = [];
+        for (let i = 0; i < count; i++) {
+          res.push(words[Math.floor(Math.random() * words.length)]);
+        }
+        return res;
+      };
+
+      const sec1 = pickRandom(10).map(w => ({ type: 1, item: w }));
+      const sec2 = pickRandom(10).map(w => ({ type: 2, item: w }));
+      const sec3 = pickRandom(10).map(w => ({ type: 3, item: w }));
+
+      quizQueue = [...sec1, ...sec2, ...sec3];
+      currentQuizIndex = 0;
+      quizScore = 0;
+      wrongAnswers = [];
+
+      document.getElementById('quizResult').classList.add('hidden');
+      document.getElementById('quizContent').classList.remove('hidden');
+      document.getElementById('quizModal').classList.remove('hidden');
+      showQuizQuestion();
     }
+
+    function showQuizQuestion() {
+      const current = quizQueue[currentQuizIndex];
+      const q = current.item;
+      const type = current.type;
+
+      document.getElementById('quizProgress').innerText = `${currentQuizIndex + 1} / ${quizQueue.length}`;
+      document.getElementById('quizFeedback').classList.add('hidden');
+
+      const badge = document.getElementById('quizSectionBadge');
+      const subArea = document.getElementById('subjectiveArea');
+      const objArea = document.getElementById('objectiveArea');
+
+      if (type === 1) {
+        badge.innerText = '1단계: 한자 ➔ 뜻 (주관식)';
+        badge.className = 'bg-indigo-100 text-indigo-700 text-xs font-bold px-2.5 py-1 rounded-full tracking-wider';
+        document.getElementById('quizPromptLabel').innerText = '뜻을 입력하세요';
+        document.getElementById('quizMainText').innerText = q.hanzi;
+        document.getElementById('quizSubText').innerText = q.pinyin;
+        document.getElementById('subjectiveLabel').innerText = '한국어 뜻 입력:';
+
+        subArea.classList.remove('hidden');
+        objArea.classList.add('hidden');
+        document.getElementById('quizAnswerInput').value = '';
+
+      } else if (type === 2) {
+        badge.innerText = '2단계: 한자 ➔ 병음 (객관식)';
+        badge.className = 'bg-amber-100 text-amber-700 text-xs font-bold px-2.5 py-1 rounded-full tracking-wider';
+        document.getElementById('quizPromptLabel').innerText = '올바른 병음을 선택하세요';
+        document.getElementById('quizMainText').innerText = q.hanzi;
+        document.getElementById('quizSubText').innerText = '';
+
+        subArea.classList.add('hidden');
+        objArea.classList.remove('hidden');
+
+        // Generate 4 Choices
+        let options = [q.pinyin];
+        while (options.length < 4) {
+          const randW = words[Math.floor(Math.random() * words.length)].pinyin;
+          if (!options.includes(randW)) options.push(randW);
+          if (words.length < 4 && options.length < 4) {
+            options.push(`pīnyīn_${options.length}`);
+          }
+        }
+        options.sort(() => 0.5 - Math.random());
+
+        objArea.innerHTML = options.map(opt => `
+          <button onclick="submitObjectiveAnswer('${opt.replace(/'/g, "\\'")}')" class="w-full py-3 px-4 bg-slate-50 hover:bg-indigo-50 hover:text-indigo-600 border border-slate-200 rounded-xl font-bold text-center transition">
+            ${opt}
+          </button>
+        `).join('');
+
+      } else if (type === 3) {
+        badge.innerText = '3단계: 뜻 ➔ 한자 (주관식)';
+        badge.className = 'bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full tracking-wider';
+        document.getElementById('quizPromptLabel').innerText = '중국어 한자를 입력하세요';
+        document.getElementById('quizMainText').innerText = q.meaning;
+        document.getElementById('quizSubText').innerText = '';
+        document.getElementById('subjectiveLabel').innerText = '중국어 한자 입력:';
+
+        subArea.classList.remove('hidden');
+        objArea.classList.add('hidden');
+        document.getElementById('quizAnswerInput').value = '';
+      }
+    }
+
+    function processResult(isCorrect, submitted, expected, item) {
+      const feedback = document.getElementById('quizFeedback');
+      feedback.classList.remove('hidden', 'bg-green-100', 'text-green-700', 'bg-red-100', 'text-red-700');
+
+      if (isCorrect) {
+        quizScore++;
+        feedback.classList.add('bg-green-100', 'text-green-700');
+        feedback.innerText = '⭕ 정답입니다!';
+      } else {
+        wrongAnswers.push({ q: item, userAns: submitted, expected: expected });
+        feedback.classList.add('bg-red-100', 'text-red-700');
+        feedback.innerText = `❌ 오답! (정답: ${expected})`;
+        speakText(item.hanzi);
+      }
+
+      setTimeout(() => {
+        currentQuizIndex++;
+        if (currentQuizIndex < quizQueue.length) {
+          showQuizQuestion();
+        } else {
+          finishQuiz();
+        }
+      }, 1000);
+    }
+
+    function submitSubjectiveAnswer() {
+      const input = document.getElementById('quizAnswerInput').value.trim();
+      if (!input) return;
+
+      const current = quizQueue[currentQuizIndex];
+      const q = current.item;
+
+      if (current.type === 1) {
+        const isCorrect = q.meaning.includes(input) || input.includes(q.meaning);
+        processResult(isCorrect, input, q.meaning, q);
+      } else if (current.type === 3) {
+        const isCorrect = (input === q.hanzi);
+        processResult(isCorrect, input, q.hanzi, q);
+      }
+    }
+
+    function submitObjectiveAnswer(selected) {
+      const current = quizQueue[currentQuizIndex];
+      const q = current.item;
+      const isCorrect = (selected === q.pinyin);
+      processResult(isCorrect, selected, q.pinyin, q);
+    }
+
+    function finishQuiz() {
+      document.getElementById('quizContent').classList.add('hidden');
+      document.getElementById('quizResult').classList.remove('hidden');
+      document.getElementById('quizScore').innerText = quizScore;
+      document.getElementById('quizTotal').innerText = quizQueue.length;
+
+      const wrongList = document.getElementById('wrongList');
+      if (wrongAnswers.length === 0) {
+        wrongList.innerHTML = '<div class="text-center text-green-600 font-bold">🎉 만점입니다! 모든 문제를 맞히셨습니다.</div>';
+      } else {
+        wrongList.innerHTML = wrongAnswers.map(w => `
+          <div>❌ <strong>${w.q.hanzi}</strong> (${w.q.meaning}) - 제출: ${w.userAns} / 정답: ${w.expected}</div>
+        `).join('');
+      }
+
+      const todayStr = new Date().toISOString().split('T')[0];
+      localStorage.setItem('zh_last_exam_date', todayStr);
+    }
+
+    function closeQuizModal() { document.getElementById('quizModal').classList.add('hidden'); }
+    function saveExamTime() { localStorage.setItem('zh_exam_time', document.getElementById('examTime').value); }
 
     function checkScheduledExam() {
       const setTime = localStorage.getItem('zh_exam_time') || '20:00';
@@ -363,83 +532,6 @@
       }
     }
 
-    function startMandatoryQuiz() {
-      if (words.length === 0) return;
-      quizQueue = [...words].sort(() => 0.5 - Math.random()).slice(0, 5);
-      currentQuizIndex = 0;
-      quizScore = 0;
-      wrongAnswers = [];
-
-      document.getElementById('quizResult').classList.add('hidden');
-      document.getElementById('quizContent').classList.remove('hidden');
-      document.getElementById('quizModal').classList.remove('hidden');
-      showQuizQuestion();
-    }
-
-    function showQuizQuestion() {
-      const q = quizQueue[currentQuizIndex];
-      document.getElementById('quizProgress').innerText = `${currentQuizIndex + 1} / ${quizQueue.length}`;
-      document.getElementById('quizHanzi').innerText = q.hanzi;
-      document.getElementById('quizPinyin').innerText = q.pinyin;
-      document.getElementById('quizAnswerInput').value = '';
-      document.getElementById('quizFeedback').classList.add('hidden');
-    }
-
-    function submitQuizAnswer() {
-      const input = document.getElementById('quizAnswerInput').value.trim();
-      const currentQ = quizQueue[currentQuizIndex];
-      const feedback = document.getElementById('quizFeedback');
-
-      if (!input) return;
-
-      const isCorrect = currentQ.meaning.includes(input) || input.includes(currentQ.meaning);
-      feedback.classList.remove('hidden', 'bg-green-100', 'text-green-700', 'bg-red-100', 'text-red-700');
-
-      if (isCorrect) {
-        quizScore++;
-        feedback.classList.add('bg-green-100', 'text-green-700');
-        feedback.innerText = '⭕ 정답입니다!';
-      } else {
-        wrongAnswers.push({ q: currentQ, userAns: input });
-        feedback.classList.add('bg-red-100', 'text-red-700');
-        feedback.innerText = `❌ 오답! (정답: ${currentQ.meaning})`;
-        speakText(currentQ.hanzi);
-      }
-
-      setTimeout(() => {
-        currentQuizIndex++;
-        if (currentQuizIndex < quizQueue.length) {
-          showQuizQuestion();
-        } else {
-          finishQuiz();
-        }
-      }, 1200);
-    }
-
-    function finishQuiz() {
-      document.getElementById('quizContent').classList.add('hidden');
-      document.getElementById('quizResult').classList.remove('hidden');
-      document.getElementById('quizScore').innerText = quizScore;
-      document.getElementById('quizTotal').innerText = quizQueue.length;
-
-      const wrongList = document.getElementById('wrongList');
-      if (wrongAnswers.length === 0) {
-        wrongList.innerHTML = '<div class="text-center text-green-600 font-bold">완벽합니다! 틀린 문제가 없습니다.</div>';
-      } else {
-        wrongList.innerHTML = wrongAnswers.map(w => `
-          <div>❌ <strong>${w.q.hanzi}</strong> (${w.q.meaning}) - 제출: ${w.userAns}</div>
-        `).join('');
-      }
-
-      const todayStr = new Date().toISOString().split('T')[0];
-      localStorage.setItem('zh_last_exam_date', todayStr);
-    }
-
-    function closeQuizModal() {
-      document.getElementById('quizModal').classList.add('hidden');
-    }
-
-    // PWA & iOS Info
     function handleInstallApp() {
       const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
       if (isIos) {
@@ -449,9 +541,7 @@
       }
     }
 
-    function closeIosModal() {
-      document.getElementById('iosModal').classList.add('hidden');
-    }
+    function closeIosModal() { document.getElementById('iosModal').classList.add('hidden'); }
   </script>
 </body>
 </html>

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>중국어 앱 - 플래시카드 & 3단계 시험</title>
   
-  <!-- 붉은 바탕에 알파벳 "C" 아이폰 전용 앱 아이콘 (자체 SVG Data URI) -->
+  <!-- 붉은 바탕에 알파벳 "C" 아이폰 전용 앱 아이콘 -->
   <link rel="apple-touch-icon" sizes="180x180" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%23E53E3E'/%3E%3Ctext x='90' y='128' font-size='105' font-family='sans-serif' font-weight='bold' fill='white' text-anchor='middle'%3EC%3C/text%3E%3C/svg%3E">
   
   <!-- 홈 화면 추가 시 앱 기본 이름 설정: "중국어 앱" -->
@@ -200,7 +200,7 @@
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-500 mb-1">예문 해석 (자동 생성 / 수정 가능)</label>
+          <label class="block text-xs font-semibold text-slate-500 mb-1">예문 해석 (자동 번역 / 수정 가능)</label>
           <input type="text" id="inputExKr" placeholder="예: 나는 사과 먹는 것을 좋아한다." class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
         </div>
 
@@ -261,7 +261,22 @@
       }
     }
 
-    // Real-time Example Processing (Pinyin & Auto Translation)
+    // Google Translate Reliable API Function
+    async function translateZhToKo(text) {
+      if (!text) return '';
+      try {
+        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=zh-CN&tl=ko&dt=t&q=${encodeURIComponent(text)}`;
+        const res = await fetch(url).then(r => r.json());
+        if (res && res[0]) {
+          return res[0].map(item => item[0]).join('');
+        }
+      } catch (e) {
+        console.error("Translation error:", e);
+      }
+      return '';
+    }
+
+    // Real-time Example Processing (Pinyin & Reliable Google Auto Translation)
     function handleExZhInput() {
       const exZh = document.getElementById('inputExZh').value.trim();
       
@@ -272,19 +287,15 @@
         document.getElementById('inputExPinyin').value = '';
       }
 
-      // 2. Debounced Auto Translation for Example Sentence
+      // 2. Debounced Google Auto Translation for Example Sentence
       clearTimeout(exTranslateTimer);
       if (exZh.length > 0) {
         exTranslateTimer = setTimeout(async () => {
-          try {
-            const transRes = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(exZh)}&langpair=zh|ko`).then(r => r.json()).catch(() => null);
-            if (transRes && transRes.responseData && transRes.responseData.translatedText) {
-              document.getElementById('inputExKr').value = transRes.responseData.translatedText;
-            }
-          } catch (e) {
-            console.error(e);
+          const translated = await translateZhToKo(exZh);
+          if (translated) {
+            document.getElementById('inputExKr').value = translated;
           }
-        }, 800); // Wait 800ms after user stops typing
+        }, 500);
       } else {
         document.getElementById('inputExKr').value = '';
       }
@@ -304,15 +315,14 @@
           document.getElementById('inputPinyin').value = convertedPinyin;
         }
 
-        const transRes = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(hanzi)}&langpair=zh|ko`).then(r => r.json()).catch(() => null);
-        let transText = '';
-        if (transRes && transRes.responseData && transRes.responseData.translatedText) {
-          transText = transRes.responseData.translatedText.replace(/[\.\?]/g, '');
+        const transText = await translateZhToKo(hanzi);
+        if (transText) {
           document.getElementById('inputMeaning').value = transText;
         }
 
-        document.getElementById('inputExZh').value = `这是${hanzi}。`;
-        handleExZhInput(); // Triggers auto pinyin and translation for the example
+        const autoExZh = `这是${hanzi}。`;
+        document.getElementById('inputExZh').value = autoExZh;
+        handleExZhInput();
 
       } catch (err) {
         console.error(err);

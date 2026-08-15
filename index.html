@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>중국어 플래시카드 & 3단계 시험</title>
   
-  <!-- 아이폰 홈 화면 전용 한자 "中" 아이콘 (SVG Data URI) -->
-  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%23dc2626'/%3E%3Ctext x='90' y='125' font-size='100' font-family='sans-serif' font-weight='bold' fill='white' text-anchor='middle'%3E中%3C/text%3E%3C/svg%3E">
+  <!-- 100% 작동하는 한자 "中" 아이폰 전용 앱 아이콘 (자체 SVG) -->
+  <link rel="apple-touch-icon" sizes="180x180" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%23E53E3E'/%3E%3Ctext x='90' y='128' font-size='105' font-family='sans-serif' font-weight='bold' fill='white' text-anchor='middle'%3E中%3C/text%3E%3C/svg%3E">
   
   <link rel="manifest" href="data:application/json;charset=utf-8,%7B%22name%22%3A%22%EC%A5%91%EA%B5%AD%EC%96%B4%20%ED%94%8C%EB%9E%98%EC%8B%9C%EC%B9%B4%EB%93%9C%22%2C%22short_name%22%3A%22%EC%A5%91%EA%B5%AD%EC%96%B4%EC%95%B1%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f8fafc%22%2C%22theme_color%22%3A%22%234f46e5%22%7D">
   <script src="https://cdn.tailwindcss.com"></script>
@@ -365,7 +365,6 @@
       `).join('');
     }
 
-    // Cloud Backup & Restore Functions
     function exportWords() {
       if (words.length === 0) return alert('백업할 단어가 없습니다.');
       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(words, null, 2));

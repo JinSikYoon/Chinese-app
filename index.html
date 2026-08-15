@@ -3,12 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>중국어 플래시카드 & 3단계 시험</title>
+  <title>중국어 앱 - 플래시카드 & 3단계 시험</title>
   
-  <!-- 100% 작동하는 한자 "中" 아이폰 전용 앱 아이콘 (자체 SVG) -->
-  <link rel="apple-touch-icon" sizes="180x180" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%23E53E3E'/%3E%3Ctext x='90' y='128' font-size='105' font-family='sans-serif' font-weight='bold' fill='white' text-anchor='middle'%3E中%3C/text%3E%3C/svg%3E">
+  <!-- 붉은 바탕에 알파벳 "C" 아이폰 전용 앱 아이콘 (자체 SVG Data URI) -->
+  <link rel="apple-touch-icon" sizes="180x180" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%23E53E3E'/%3E%3Ctext x='90' y='128' font-size='105' font-family='sans-serif' font-weight='bold' fill='white' text-anchor='middle'%3EC%3C/text%3E%3C/svg%3E">
   
-  <link rel="manifest" href="data:application/json;charset=utf-8,%7B%22name%22%3A%22%EC%A5%91%EA%B5%AD%EC%96%B4%20%ED%94%8C%EB%9E%98%EC%8B%9C%EC%B9%B4%EB%93%9C%22%2C%22short_name%22%3A%22%EC%A5%91%EA%B5%AD%EC%96%B4%EC%95%B1%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f8fafc%22%2C%22theme_color%22%3A%22%234f46e5%22%7D">
+  <!-- 홈 화면 추가 시 앱 기본 이름 설정: "중국어 앱" -->
+  <link rel="manifest" href="data:application/json;charset=utf-8,%7B%22name%22%3A%22%EC%A5%91%EA%B5%AD%EC%96%B4%20%EC%95%B1%22%2C%22short_name%22%3A%22%EC%A5%91%EA%B5%AD%EC%96%B4%20%EC%95%B1%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f8fafc%22%2C%22theme_color%22%3A%22%234f46e5%22%7D">
+  
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <!-- Pinyin Convert Library -->
@@ -117,6 +119,7 @@
       <div id="card" class="card w-full h-64 cursor-pointer perspective-1000" onclick="flipCard()">
         <div class="card-inner w-full h-full relative rounded-2xl shadow-md border border-slate-200 bg-white p-6 flex flex-col justify-between text-center transition-all">
           
+          <!-- Front -->
           <div class="card-front absolute inset-0 p-6 flex flex-col justify-between items-center bg-white rounded-2xl">
             <div class="text-xs text-slate-400 font-semibold tracking-wider">TAP TO FLIP</div>
             <div class="space-y-2">
@@ -131,9 +134,13 @@
                 📖 예문 보기
               </button>
             </div>
-            <div id="cardExampleFront" class="hidden text-xs text-slate-500 italic bg-slate-50 p-2 rounded-lg w-full text-center"></div>
+            <div id="cardExampleFront" class="hidden text-xs bg-slate-50 p-2.5 rounded-lg w-full text-center space-y-0.5">
+              <div id="cardExZhFront" class="font-medium text-slate-800"></div>
+              <div id="cardExPinyinFront" class="text-indigo-600 font-semibold text-[11px]"></div>
+            </div>
           </div>
 
+          <!-- Back -->
           <div class="card-back absolute inset-0 p-6 flex flex-col justify-between items-center bg-indigo-50/50 rounded-2xl">
             <div class="text-xs text-indigo-400 font-semibold tracking-wider">MEANING</div>
             <div class="space-y-2">
@@ -141,6 +148,7 @@
             </div>
             <div id="cardExampleBack" class="text-xs text-slate-600 bg-white/80 border border-slate-200 p-2.5 rounded-lg w-full text-center space-y-1">
               <div id="cardExZh" class="font-medium text-slate-800"></div>
+              <div id="cardExPinyin" class="text-indigo-600 font-semibold text-[11px]"></div>
               <div id="cardExKr" class="text-slate-500"></div>
             </div>
           </div>
@@ -183,7 +191,12 @@
 
         <div>
           <label class="block text-xs font-semibold text-slate-500 mb-1">중국어 예문 (선택)</label>
-          <input type="text" id="inputExZh" placeholder="예: 我喜欢吃苹果。" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <input type="text" id="inputExZh" oninput="updateExPinyin()" placeholder="예: 我喜欢吃苹果。" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-1">예문 병음 (자동 생성)</label>
+          <input type="text" id="inputExPinyin" placeholder="예: wǒ xǐhuan chī píngguǒ." class="w-full px-3 py-2 border border-slate-200 bg-slate-50 rounded-lg text-sm text-indigo-600 font-medium focus:outline-none">
         </div>
 
         <div>
@@ -215,10 +228,10 @@
 
   <script>
     let words = JSON.parse(localStorage.getItem('zh_words')) || [
-      { id: 1, hanzi: '你好', pinyin: 'nǐ hǎo', meaning: '안녕하세요', exZh: '你好，很高兴认识你。', exKr: '안녕하세요, 만나서 반갑습니다.' },
-      { id: 2, hanzi: '谢谢', pinyin: 'xièxie', meaning: '감사합니다', exZh: '非常谢谢你的帮助。', exKr: '도와주셔서 정말 감사합니다.' },
-      { id: 3, hanzi: '苹果', pinyin: 'píngguǒ', meaning: '사과', exZh: '我喜欢吃苹果。', exKr: '나는 사과를 좋아합니다.' },
-      { id: 4, hanzi: '学习', pinyin: 'xuéxí', meaning: '공부하다', exZh: '努力学习汉语。', exKr: '열심히 중국어를 공부합니다.' }
+      { id: 1, hanzi: '你好', pinyin: 'nǐ hǎo', meaning: '안녕하세요', exZh: '你好，很高兴认识你。', exPinyin: 'nǐ hǎo, hěn gāoxìng rènshi nǐ.', exKr: '안녕하세요, 만나서 반갑습니다.' },
+      { id: 2, hanzi: '谢谢', pinyin: 'xièxie', meaning: '감사합니다', exZh: '非常谢谢你的帮助。', exPinyin: 'fēicháng xièxie nǐ de bāngzhù.', exKr: '도와주셔서 정말 감사합니다.' },
+      { id: 3, hanzi: '苹果', pinyin: 'píngguǒ', meaning: '사과', exZh: '我喜欢吃苹果。', exPinyin: 'wǒ xǐhuan chī píngguǒ.', exKr: '나는 사과를 좋아합니다.' },
+      { id: 4, hanzi: '学习', pinyin: 'xuéxí', meaning: '공부하다', exZh: '努力学习汉语。', exPinyin: 'nǔlì xuéxí hànyǔ.', exKr: '열심히 중국어를 공부합니다.' }
     ];
     let currentIndex = 0;
     let quizQueue = [];
@@ -247,6 +260,15 @@
       }
     }
 
+    function updateExPinyin() {
+      const exZh = document.getElementById('inputExZh').value.trim();
+      if (exZh && window.pinyinPro && window.pinyinPro.pinyin) {
+        document.getElementById('inputExPinyin').value = window.pinyinPro.pinyin(exZh);
+      } else {
+        document.getElementById('inputExPinyin').value = '';
+      }
+    }
+
     async function autoFill() {
       const hanzi = document.getElementById('inputHanzi').value.trim();
       if (!hanzi) return alert('한자를 먼저 입력해 주세요.');
@@ -268,7 +290,9 @@
           document.getElementById('inputMeaning').value = transText;
         }
 
-        document.getElementById('inputExZh').value = `这是${hanzi}。`;
+        const autoExZh = `这是${hanzi}。`;
+        document.getElementById('inputExZh').value = autoExZh;
+        updateExPinyin();
         document.getElementById('inputExKr').value = `이것은 ${transText || hanzi}입니다.`;
 
       } catch (err) {
@@ -288,12 +312,19 @@
         return;
       }
       const item = words[currentIndex];
+      const exPinyinVal = item.exPinyin || (item.exZh && window.pinyinPro ? window.pinyinPro.pinyin(item.exZh) : '');
+
       document.getElementById('cardHanzi').innerText = item.hanzi;
       document.getElementById('cardPinyin').innerText = item.pinyin;
       document.getElementById('cardMeaning').innerText = item.meaning;
+      
+      document.getElementById('cardExZhFront').innerText = item.exZh || '등록된 예문이 없습니다.';
+      document.getElementById('cardExPinyinFront').innerText = exPinyinVal;
+
       document.getElementById('cardExZh').innerText = item.exZh || '등록된 예문이 없습니다.';
+      document.getElementById('cardExPinyin').innerText = exPinyinVal;
       document.getElementById('cardExKr').innerText = item.exKr || '';
-      document.getElementById('cardExampleFront').innerText = item.exZh || '';
+
       document.getElementById('cardProgress').innerText = `${currentIndex + 1} / ${words.length}`;
       document.getElementById('card').classList.remove('flipped');
     }
@@ -318,11 +349,12 @@
       const pinyin = document.getElementById('inputPinyin').value.trim();
       const meaning = document.getElementById('inputMeaning').value.trim();
       const exZh = document.getElementById('inputExZh').value.trim();
+      const exPinyin = document.getElementById('inputExPinyin').value.trim();
       const exKr = document.getElementById('inputExKr').value.trim();
 
       if (!hanzi || !meaning) return alert('한자와 뜻은 필수 입력사항입니다.');
 
-      words.push({ id: Date.now(), hanzi, pinyin, meaning, exZh, exKr });
+      words.push({ id: Date.now(), hanzi, pinyin, meaning, exZh, exPinyin, exKr });
       saveWords();
       renderList();
       currentIndex = words.length - 1;
@@ -332,6 +364,7 @@
       document.getElementById('inputPinyin').value = '';
       document.getElementById('inputMeaning').value = '';
       document.getElementById('inputExZh').value = '';
+      document.getElementById('inputExPinyin').value = '';
       document.getElementById('inputExKr').value = '';
     }
 

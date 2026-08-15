@@ -190,8 +190,8 @@
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-500 mb-1">중국어 예문 (선택)</label>
-          <input type="text" id="inputExZh" oninput="updateExPinyin()" placeholder="예: 我喜欢吃苹果。" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <label class="block text-xs font-semibold text-slate-500 mb-1">중국어 예문 (입력 시 병음/해석 자동 적용)</label>
+          <input type="text" id="inputExZh" oninput="handleExZhInput()" placeholder="예: 我喜欢吃苹果。" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
         </div>
 
         <div>
@@ -200,7 +200,7 @@
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-500 mb-1">예문 해석 (선택)</label>
+          <label class="block text-xs font-semibold text-slate-500 mb-1">예문 해석 (자동 생성 / 수정 가능)</label>
           <input type="text" id="inputExKr" placeholder="예: 나는 사과 먹는 것을 좋아한다." class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
         </div>
 
@@ -238,6 +238,7 @@
     let currentQuizIndex = 0;
     let quizScore = 0;
     let wrongAnswers = [];
+    let exTranslateTimer = null;
 
     window.onload = () => {
       saveWords();
@@ -260,12 +261,32 @@
       }
     }
 
-    function updateExPinyin() {
+    // Real-time Example Processing (Pinyin & Auto Translation)
+    function handleExZhInput() {
       const exZh = document.getElementById('inputExZh').value.trim();
+      
+      // 1. Instant Pinyin Conversion
       if (exZh && window.pinyinPro && window.pinyinPro.pinyin) {
         document.getElementById('inputExPinyin').value = window.pinyinPro.pinyin(exZh);
       } else {
         document.getElementById('inputExPinyin').value = '';
+      }
+
+      // 2. Debounced Auto Translation for Example Sentence
+      clearTimeout(exTranslateTimer);
+      if (exZh.length > 0) {
+        exTranslateTimer = setTimeout(async () => {
+          try {
+            const transRes = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(exZh)}&langpair=zh|ko`).then(r => r.json()).catch(() => null);
+            if (transRes && transRes.responseData && transRes.responseData.translatedText) {
+              document.getElementById('inputExKr').value = transRes.responseData.translatedText;
+            }
+          } catch (e) {
+            console.error(e);
+          }
+        }, 800); // Wait 800ms after user stops typing
+      } else {
+        document.getElementById('inputExKr').value = '';
       }
     }
 
@@ -290,10 +311,8 @@
           document.getElementById('inputMeaning').value = transText;
         }
 
-        const autoExZh = `这是${hanzi}。`;
-        document.getElementById('inputExZh').value = autoExZh;
-        updateExPinyin();
-        document.getElementById('inputExKr').value = `이것은 ${transText || hanzi}입니다.`;
+        document.getElementById('inputExZh').value = `这是${hanzi}。`;
+        handleExZhInput(); // Triggers auto pinyin and translation for the example
 
       } catch (err) {
         console.error(err);

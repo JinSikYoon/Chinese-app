@@ -301,6 +301,58 @@
     let exTranslateTimer = null;
     let editExTranslateTimer = null;
 
+    // Web Audio Sound Generator for Right/Wrong Answers
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playSound(type) {
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      if (type === 'correct') {
+        // High-pitched double chime
+        const now = audioCtx.currentTime;
+        const osc1 = audioCtx.createOscillator();
+        const osc2 = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc1.type = 'sine';
+        osc2.type = 'sine';
+        osc1.frequency.setValueAtTime(523.25, now); // C5
+        osc2.frequency.setValueAtTime(659.25, now + 0.1); // E5
+
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+        osc1.connect(gain);
+        osc2.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc1.start(now);
+        osc1.stop(now + 0.1);
+        osc2.start(now + 0.1);
+        osc2.stop(now + 0.35);
+
+      } else if (type === 'wrong') {
+        // Low saw-tooth error buzz
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(150, now);
+        osc.frequency.linearRampToValueAtTime(100, now + 0.25);
+
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.25);
+      }
+    }
+
     window.onload = () => {
       saveWords();
       renderCard();
@@ -317,7 +369,7 @@
     function speakText(text) {
       if (!text || text === '등록된 예문이 없습니다.') return;
       if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel(); // Stop previous speech
+        window.speechSynthesis.cancel();
         const msg = new SpeechSynthesisUtterance(text);
         msg.lang = 'zh-CN';
         window.speechSynthesis.speak(msg);
@@ -681,10 +733,12 @@
 
       if (isCorrect) {
         quizScore++;
+        playSound('correct'); // 정답 효과음
         feedback.classList.add('bg-green-100', 'text-green-700');
         feedback.innerText = '⭕ 정답입니다!';
       } else {
         wrongAnswers.push({ q: item, userAns: submitted, expected: expected });
+        playSound('wrong'); // 오답 효과음
         feedback.classList.add('bg-red-100', 'text-red-700');
         feedback.innerText = `❌ 오답! (정답: ${expected})`;
         speakText(item.hanzi);

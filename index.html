@@ -301,7 +301,6 @@
     let exTranslateTimer = null;
     let editExTranslateTimer = null;
 
-    // Robust Web Audio Context Handling
     let audioCtx = null;
 
     function initAudio() {
@@ -320,15 +319,14 @@
       const now = audioCtx.currentTime;
 
       if (type === 'correct') {
-        // High-pitched bright double chime (Ding-Dong)
         const osc1 = audioCtx.createOscillator();
         const osc2 = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
 
         osc1.type = 'sine';
         osc2.type = 'sine';
-        osc1.frequency.setValueAtTime(523.25, now);      // C5
-        osc2.frequency.setValueAtTime(659.25, now + 0.08); // E5
+        osc1.frequency.setValueAtTime(523.25, now);
+        osc2.frequency.setValueAtTime(659.25, now + 0.08);
 
         gain.gain.setValueAtTime(0.2, now);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
@@ -343,7 +341,6 @@
         osc2.stop(now + 0.35);
 
       } else if (type === 'wrong') {
-        // Low error buzz sound
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
 
@@ -610,15 +607,28 @@
       `).join('');
     }
 
+    // iOS Safari Compatible Backup Export Function
     function exportWords() {
       if (words.length === 0) return alert('백업할 단어가 없습니다.');
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(words, null, 2));
-      const downloadAnchor = document.createElement('a');
-      downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", `chinese_words_backup.json`);
-      document.body.appendChild(downloadAnchor);
-      downloadAnchor.click();
-      downloadAnchor.remove();
+      
+      const jsonString = JSON.stringify(words, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const fileName = 'chinese_words_backup.json';
+
+      if (navigator.msSaveOrOpenBlob) {
+        navigator.msSaveOrOpenBlob(blob, fileName);
+      } else {
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        setTimeout(() => {
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+        }, 100);
+      }
     }
 
     function importWords(event) {
@@ -743,12 +753,12 @@
 
       if (isCorrect) {
         quizScore++;
-        playSound('correct'); // 정답 효과음
+        playSound('correct');
         feedback.classList.add('bg-green-100', 'text-green-700');
         feedback.innerText = '⭕ 정답입니다!';
       } else {
         wrongAnswers.push({ q: item, userAns: submitted, expected: expected });
-        playSound('wrong'); // 낮고 명확한 오답 경고음 (음성 재생 없음)
+        playSound('wrong');
         feedback.classList.add('bg-red-100', 'text-red-700');
         feedback.innerText = `❌ 오답! (정답: ${expected})`;
       }

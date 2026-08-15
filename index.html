@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>중국어 플래시카드 & 3단계 시험</title>
+  
+  <!-- 아이폰 홈 화면 전용 한자 "中" 아이콘 (SVG Data URI) -->
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%23dc2626'/%3E%3Ctext x='90' y='125' font-size='100' font-family='sans-serif' font-weight='bold' fill='white' text-anchor='middle'%3E中%3C/text%3E%3C/svg%3E">
+  
   <link rel="manifest" href="data:application/json;charset=utf-8,%7B%22name%22%3A%22%EC%A5%91%EA%B5%AD%EC%96%B4%20%ED%94%8C%EB%9E%98%EC%8B%9C%EC%B9%B4%EB%93%9C%22%2C%22short_name%22%3A%22%EC%A5%91%EA%B5%AD%EC%96%B4%EC%95%B1%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f8fafc%22%2C%22theme_color%22%3A%22%234f46e5%22%7D">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -191,11 +195,18 @@
       </div>
     </section>
 
-    <!-- Word List -->
+    <!-- Word List Section with Backup & Restore -->
     <section class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
       <div class="flex justify-between items-center border-b pb-2">
         <h2 class="font-bold text-sm text-slate-700">단어장 목록 (<span id="wordCount">0</span>)</h2>
-        <button onclick="clearAllWords()" class="text-xs text-red-500 hover:underline">전체 삭제</button>
+        <div class="flex items-center gap-2">
+          <button onclick="exportWords()" class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md hover:bg-slate-200 font-medium"><i class="fa-solid fa-download mr-1"></i>백업</button>
+          <label class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md hover:bg-slate-200 font-medium cursor-pointer">
+            <i class="fa-solid fa-upload mr-1"></i>복구
+            <input type="file" accept=".json" onchange="importWords(event)" class="hidden">
+          </label>
+          <button onclick="clearAllWords()" class="text-xs text-red-500 hover:underline ml-1">전체 삭제</button>
+        </div>
       </div>
       <div id="wordList" class="divide-y divide-slate-100 max-h-60 overflow-y-auto"></div>
     </section>
@@ -236,7 +247,6 @@
       }
     }
 
-    // Client-side Reliable Auto Fill Function using pinyin-pro library
     async function autoFill() {
       const hanzi = document.getElementById('inputHanzi').value.trim();
       if (!hanzi) return alert('한자를 먼저 입력해 주세요.');
@@ -246,13 +256,11 @@
       btn.disabled = true;
 
       try {
-        // 1. Direct Local Pinyin Conversion
         if (window.pinyinPro && window.pinyinPro.pinyin) {
           const convertedPinyin = window.pinyinPro.pinyin(hanzi);
           document.getElementById('inputPinyin').value = convertedPinyin;
         }
 
-        // 2. Korean Translation Lookup
         const transRes = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(hanzi)}&langpair=zh|ko`).then(r => r.json()).catch(() => null);
         let transText = '';
         if (transRes && transRes.responseData && transRes.responseData.translatedText) {
@@ -260,7 +268,6 @@
           document.getElementById('inputMeaning').value = transText;
         }
 
-        // 3. Example Sentences
         document.getElementById('inputExZh').value = `这是${hanzi}。`;
         document.getElementById('inputExKr').value = `이것은 ${transText || hanzi}입니다.`;
 
@@ -356,6 +363,43 @@
           <button onclick="deleteWord(${w.id})" class="text-slate-300 hover:text-red-500 p-1"><i class="fa-solid fa-trash-can"></i></button>
         </div>
       `).join('');
+    }
+
+    // Cloud Backup & Restore Functions
+    function exportWords() {
+      if (words.length === 0) return alert('백업할 단어가 없습니다.');
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(words, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `chinese_words_backup.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    function importWords(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (Array.isArray(imported)) {
+            words = imported;
+            saveWords();
+            renderList();
+            currentIndex = 0;
+            renderCard();
+            alert('단어장을 성공적으로 복구했습니다!');
+          } else {
+            alert('올바른 단어장 파일(.json)이 아닙니다.');
+          }
+        } catch (err) {
+          alert('파일을 읽는 중 오류가 발생했습니다.');
+        }
+      };
+      reader.readAsText(file);
     }
 
     function startMandatoryQuiz() {

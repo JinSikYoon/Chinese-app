@@ -301,26 +301,36 @@
     let exTranslateTimer = null;
     let editExTranslateTimer = null;
 
-    // Web Audio Sound Generator for Right/Wrong Answers
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    // Robust Web Audio Context Handling
+    let audioCtx = null;
 
-    function playSound(type) {
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
       if (audioCtx.state === 'suspended') {
         audioCtx.resume();
       }
+    }
+
+    function playSound(type) {
+      initAudio();
+      if (!audioCtx) return;
+
+      const now = audioCtx.currentTime;
+
       if (type === 'correct') {
-        // High-pitched double chime
-        const now = audioCtx.currentTime;
+        // High-pitched bright double chime (Ding-Dong)
         const osc1 = audioCtx.createOscillator();
         const osc2 = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
 
         osc1.type = 'sine';
         osc2.type = 'sine';
-        osc1.frequency.setValueAtTime(523.25, now); // C5
-        osc2.frequency.setValueAtTime(659.25, now + 0.1); // E5
+        osc1.frequency.setValueAtTime(523.25, now);      // C5
+        osc2.frequency.setValueAtTime(659.25, now + 0.08); // E5
 
-        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.setValueAtTime(0.2, now);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
 
         osc1.connect(gain);
@@ -328,21 +338,20 @@
         gain.connect(audioCtx.destination);
 
         osc1.start(now);
-        osc1.stop(now + 0.1);
-        osc2.start(now + 0.1);
+        osc1.stop(now + 0.08);
+        osc2.start(now + 0.08);
         osc2.stop(now + 0.35);
 
       } else if (type === 'wrong') {
-        // Low saw-tooth error buzz
-        const now = audioCtx.currentTime;
+        // Low error buzz sound
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
 
         osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(150, now);
-        osc.frequency.linearRampToValueAtTime(100, now + 0.25);
+        osc.frequency.setValueAtTime(140, now);
+        osc.frequency.linearRampToValueAtTime(90, now + 0.25);
 
-        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.setValueAtTime(0.25, now);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
 
         osc.connect(gain);
@@ -638,6 +647,7 @@
     }
 
     function startMandatoryQuiz() {
+      initAudio();
       if (words.length === 0) return alert('시험을 보려면 단어를 먼저 등록해 주세요.');
 
       const pickRandom = (count) => {
@@ -738,10 +748,9 @@
         feedback.innerText = '⭕ 정답입니다!';
       } else {
         wrongAnswers.push({ q: item, userAns: submitted, expected: expected });
-        playSound('wrong'); // 오답 효과음
+        playSound('wrong'); // 낮고 명확한 오답 경고음 (음성 재생 없음)
         feedback.classList.add('bg-red-100', 'text-red-700');
         feedback.innerText = `❌ 오답! (정답: ${expected})`;
-        speakText(item.hanzi);
       }
 
       setTimeout(() => {

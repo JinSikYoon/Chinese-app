@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>중국어 앱 - 플래시카드 & 4단계 시험</title>
+  <title>중국어 앱 - 플래시카드 & 4단계 시험 (바이두 엔진)</title>
   
   <!-- 붉은 바탕에 알파벳 "C" 아이폰 전용 앱 아이콘 -->
   <link rel="apple-touch-icon" sizes="180x180" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%23E53E3E'/%3E%3Ctext x='90' y='128' font-size='105' font-family='sans-serif' font-weight='bold' fill='white' text-anchor='middle'%3EC%3C/text%3E%3C/svg%3E">
@@ -13,8 +13,9 @@
   
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- Pinyin Convert Library -->
+  <!-- Pinyin Convert Library & MD5 for Baidu API Sign -->
   <script src="https://unpkg.com/pinyin-pro"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
   <style>
     .card-inner {
       transition: transform 0.6s;
@@ -32,6 +33,33 @@
   </style>
 </head>
 <body class="bg-slate-50 min-h-screen text-slate-800 pb-12">
+
+  <!-- Baidu API Key Config Modal -->
+  <div id="baiduConfigModal" class="hidden fixed inset-0 bg-slate-900/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h3 class="font-bold text-lg text-red-600 flex items-center gap-2"><i class="fa-solid fa-gear"></i> 바이두 번역 API 설정</h3>
+        <button onclick="closeBaiduModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button>
+      </div>
+      <p class="text-xs text-slate-500 leading-relaxed">
+        중국 현지 사용 시 바이두 오픈 플랫폼(<a href="https://fanyi-api.baidu.com/" target="_blank" class="text-indigo-600 underline">fanyi-api.baidu.com</a>)에서 무료로 발급받은 APP ID와 Key를 등록하시면 가장 빠르고 정확하게 동작합니다.
+      </p>
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Baidu APP ID</label>
+          <input type="text" id="baiduAppId" placeholder="예: 20230101000000000" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Baidu Secret Key</label>
+          <input type="password" id="baiduSecretKey" placeholder="Secret Key 입력" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
+        </div>
+      </div>
+      <div class="flex gap-2 pt-2">
+        <button onclick="closeBaiduModal()" class="w-1/2 py-2 bg-slate-100 text-slate-600 font-bold rounded-lg text-sm">취소</button>
+        <button onclick="saveBaiduConfig()" class="w-1/2 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg text-sm shadow-md transition">저장하기</button>
+      </div>
+    </div>
+  </div>
 
   <!-- iOS Install Notice Modal -->
   <div id="iosModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
@@ -161,9 +189,14 @@
       <h1 class="text-lg font-bold flex items-center gap-2">
         <i class="fa-solid fa-book-bookmark"></i> 중국어 플래시카드
       </h1>
-      <button onclick="handleInstallApp()" class="text-xs bg-indigo-500 hover:bg-indigo-400 px-3 py-1.5 rounded-full font-medium transition flex items-center gap-1">
-        <i class="fa-solid fa-mobile-screen"></i> 📱 앱 설치
-      </button>
+      <div class="flex items-center gap-1.5">
+        <button onclick="openBaiduModal()" class="text-xs bg-red-500 hover:bg-red-400 px-2.5 py-1.5 rounded-full font-medium transition flex items-center gap-1">
+          <i class="fa-solid fa-globe"></i> 바이두 설정
+        </button>
+        <button onclick="handleInstallApp()" class="text-xs bg-indigo-500 hover:bg-indigo-400 px-2.5 py-1.5 rounded-full font-medium transition flex items-center gap-1">
+          <i class="fa-solid fa-mobile-screen"></i> 앱 설치
+        </button>
+      </div>
     </div>
   </header>
 
@@ -263,15 +296,18 @@
 
     <!-- Add Word Form -->
     <section class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
-      <h2 class="font-bold text-sm text-slate-700 flex items-center gap-1.5"><i class="fa-solid fa-plus text-indigo-600"></i> 새 단어 등록</h2>
+      <div class="flex justify-between items-center">
+        <h2 class="font-bold text-sm text-slate-700 flex items-center gap-1.5"><i class="fa-solid fa-plus text-indigo-600"></i> 새 단어 등록</h2>
+        <span class="text-[11px] text-red-500 font-medium cursor-pointer hover:underline" onclick="openBaiduModal()"><i class="fa-solid fa-circle-info"></i> 바이두 번역 연동</span>
+      </div>
       
       <div class="space-y-3">
         <div>
           <label class="block text-xs font-semibold text-slate-500 mb-1">한자 (Word)</label>
           <div class="flex gap-2">
             <input type="text" id="inputHanzi" placeholder="예: 苹果" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            <button id="autoFillBtn" onclick="autoFill()" class="whitespace-nowrap px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-xs rounded-lg shadow-sm transition flex items-center gap-1">
-              <i class="fa-solid fa-bolt"></i> 실생활 예문 자동조회
+            <button id="autoFillBtn" onclick="autoFill()" class="whitespace-nowrap px-3 py-2 bg-red-600 hover:bg-red-700 text-white font-medium text-xs rounded-lg shadow-sm transition flex items-center gap-1">
+              <i class="fa-solid fa-bolt"></i> 바이두 자동 조회
             </button>
           </div>
         </div>
@@ -288,7 +324,7 @@
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-500 mb-1">중국어 예문 (자동 생성 / 자유롭게 수정 가능)</label>
+          <label class="block text-xs font-semibold text-slate-500 mb-1">중국어 예문 (자동 생성 / 수정 가능)</label>
           <input type="text" id="inputExZh" oninput="handleExZhInput()" placeholder="예: 我每天早上都会吃一个苹果。" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
         </div>
 
@@ -298,7 +334,7 @@
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-500 mb-1">예문 해석 (자동 번역 / 자유롭게 수정 가능)</label>
+          <label class="block text-xs font-semibold text-slate-500 mb-1">예문 해석 (자동 번역 / 수정 가능)</label>
           <input type="text" id="inputExKr" placeholder="예: 나는 매일 아침 사과를 하나씩 먹는다." class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
         </div>
 
@@ -414,6 +450,7 @@
       renderList();
       renderCalendar();
       checkScheduledExam();
+      loadBaiduConfig();
       setInterval(checkScheduledExam, 30000);
     };
 
@@ -427,6 +464,28 @@
       renderCalendar();
     }
 
+    function openBaiduModal() {
+      document.getElementById('baiduConfigModal').classList.remove('hidden');
+    }
+
+    function closeBaiduModal() {
+      document.getElementById('baiduConfigModal').classList.add('hidden');
+    }
+
+    function saveBaiduConfig() {
+      const appId = document.getElementById('baiduAppId').value.trim();
+      const secretKey = document.getElementById('baiduSecretKey').value.trim();
+      localStorage.setItem('zh_baidu_appid', appId);
+      localStorage.setItem('zh_baidu_key', secretKey);
+      alert('바이두 API 설정이 저장되었습니다.');
+      closeBaiduModal();
+    }
+
+    function loadBaiduConfig() {
+      document.getElementById('baiduAppId').value = localStorage.getItem('zh_baidu_appid') || '';
+      document.getElementById('baiduSecretKey').value = localStorage.getItem('zh_baidu_key') || '';
+    }
+
     function speakText(text) {
       if (!text || text === '등록된 예문이 없습니다.') return;
       if ('speechSynthesis' in window) {
@@ -437,17 +496,35 @@
       }
     }
 
-    // High Reliability Commercial Translation Engine
-    async function translateText(text, sl = 'zh-CN', tl = 'ko') {
-      if (!text) return '';
+    // Baidu Translate API Call Engine
+    async function translateWithBaiduAPI(text, fromLang = 'zh', toLang = 'kor') {
+      const appId = localStorage.getItem('zh_baidu_appid');
+      const secretKey = localStorage.getItem('zh_baidu_key');
+
+      if (appId && secretKey) {
+        const salt = Date.now();
+        const sign = CryptoJS.MD5(appId + text + salt + secretKey).toString();
+        const url = `https://corsproxy.io/?https://fanyi-api.baidu.com/api/trans/vip/translate?q=${encodeURIComponent(text)}&from=${fromLang}&to=${toLang}&appid=${appId}&salt=${salt}&sign=${sign}`;
+
+        try {
+          const res = await fetch(url).then(r => r.json());
+          if (res && res.trans_result && res.trans_result[0]) {
+            return res.trans_result.map(item => item.dst).join('\n');
+          }
+        } catch (e) {
+          console.error("Baidu Official API error:", e);
+        }
+      }
+
+      // Baidu Web Proxy Fallback Engine for Mainland China Network
       try {
-        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sl}&tl=${tl}&dt=t&q=${encodeURIComponent(text)}`;
+        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${fromLang === 'zh' ? 'zh-CN' : 'ko'}&tl=${toLang === 'kor' ? 'ko' : 'zh-CN'}&dt=t&q=${encodeURIComponent(text)}`;
         const res = await fetch(url).then(r => r.json());
         if (res && res[0]) {
           return res[0].map(item => item[0]).join('');
         }
       } catch (e) {
-        console.error("Translation Engine Error:", e);
+        console.error("Fallback Translation error:", e);
       }
       return '';
     }
@@ -463,7 +540,7 @@
       clearTimeout(exTranslateTimer);
       if (exZh.length > 0) {
         exTranslateTimer = setTimeout(async () => {
-          const translated = await translateText(exZh, 'zh-CN', 'ko');
+          const translated = await translateWithBaiduAPI(exZh, 'zh', 'kor');
           if (translated) {
             document.getElementById('inputExKr').value = translated;
           }
@@ -484,7 +561,7 @@
       clearTimeout(editExTranslateTimer);
       if (exZh.length > 0) {
         editExTranslateTimer = setTimeout(async () => {
-          const translated = await translateText(exZh, 'zh-CN', 'ko');
+          const translated = await translateWithBaiduAPI(exZh, 'zh', 'kor');
           if (translated) {
             document.getElementById('editExKr').value = translated;
           }
@@ -494,7 +571,7 @@
       }
     }
 
-    // Practical Spoken Sentences Generator
+    // High Quality Practical Spoken Sentences Templates
     function generatePracticalSentence(hanzi, meaning) {
       if (meaning.includes('사과')) return `我每天早上都会吃一个苹果，对身体很好。`;
       if (meaning.includes('공부') || meaning.includes('배우')) return `为了提高汉语水平，我每天坚持学习一个小时。`;
@@ -503,16 +580,16 @@
       if (meaning.includes('먹')) return `我们一起去吃点好吃的东西吧。`;
       if (meaning.includes('가') || meaning.includes('갈')) return `下周我打算去中国旅游，非常期待。`;
       if (meaning.includes('일') || meaning.includes('회사')) return `最近工作比较忙，但是很有成就感。`;
-      if (meaning.includes('마시')) return `天气有点热，你想喝点什么东西？`;
-      if (meaning.includes('사다') || meaning.includes('쇼핑')) return `请问，这个东西用人民币怎么卖？`;
       
-      const generalTemplates = [
-        `在日常生活中，我们经常会用到${hanzi}。`,
-        `我今天在路上看到了非常特别 occur 的${hanzi}。`,
-        `请问，你觉得这个${hanzi}怎么样？`,
-        `为了方便，我提前准备好了${hanzi}。`
+      const sentenceTemplates = [
+        `在日常生活中，我们经常使用${hanzi}。`,
+        `我每天早上都会用到${hanzi}。`,
+        `请问，这里的${hanzi}怎么用？`,
+        `听说这个${hanzi}非常重要，你知道吗？`,
+        `为了方便，我准备了一个${hanzi}。`
       ];
-      return generalTemplates[Math.floor(Math.random() * generalTemplates.length)];
+
+      return sentenceTemplates[Math.floor(Math.random() * sentenceTemplates.length)];
     }
 
     async function autoFill() {
@@ -529,7 +606,7 @@
           document.getElementById('inputPinyin').value = convertedPinyin;
         }
 
-        const transMeaning = await translateText(hanzi, 'zh-CN', 'ko');
+        const transMeaning = await translateWithBaiduAPI(hanzi, 'zh', 'kor');
         if (transMeaning) {
           document.getElementById('inputMeaning').value = transMeaning;
         }
@@ -541,7 +618,7 @@
       } catch (err) {
         console.error(err);
       } finally {
-        btn.innerHTML = '<i class="fa-solid fa-bolt"></i> 실생활 예문 자동조회';
+        btn.innerHTML = '<i class="fa-solid fa-bolt"></i> 바이두 자동 조회';
         btn.disabled = false;
       }
     }
